@@ -1,0 +1,47 @@
+---
+title: "Análise individual das variáveis"
+author: "Fernando Peres"
+date: "6/9/2017"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = FALSE)
+
+# wine.path       = "/Users/fernandoperes/Google Drive/r-dev/2017-06-Trabalho-R/"
+wine.path = "C:/r-wine/"
+setwd(wine.path) 
+
+# use wines-util.r resources
+source(file =  paste(wine.path, "wines-utils.R", sep = ""))
+
+getwd()
+
+# load prepared data files
+load(file="all-wine.Rda")
+load(file="red-wine.Rda")
+load(file="white-wine.Rda")
+
+```
+
+
+# Acidez fixa / $fixed.acidity
+```{r echo = TRUE}
+wine.attr2.analysis (x = all.wine$fixed.acidity, xlab = wine.fields.fixed.acidity, 
+                     y = all.wine$quality, ylab = wine.fields.quality,
+                     y2 = all.wine$taste,
+                     y2lab = wine.fields.taste,
+                     color = wine.color.all)
+```
+
+# Acidez volátil / $volatile.acidity
+
+```{r }
+
+wine.attr2.analysis (x = all.wine$volatile.acidity, xlab = wine.fields.volatile.acidity,
+                     y = all.wine$quality, ylab = wine.fields.quality,
+                     y2 = all.wine$taste, y2lab = wine.fields.taste,
+                     color = wine.color.all)
+```
+
