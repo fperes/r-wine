@@ -1,4 +1,4 @@
-#################################################################################################
+
 #
 # INFNET MIT Big Data - Bloco A - Trabalho de R
 # 
@@ -8,7 +8,7 @@
 # Data               : 2017-06-09
 # Arquivo            : Preparação dos dados 
 #
-#################################################################################################
+#*******************************************************************************
 
 
 # Há dois datasets neste estudo, um sobre vinho tinto e outro sobre vinho branco.
@@ -33,17 +33,21 @@
 # 11. alcohol              = Teor alcólico
 # 12. quality              = Qualidade
 
-# wine.path = "/Users/fernandoperes/Google Drive/r-dev/2017-06-Trabalho-R/"
-wine.path = "C:/r-wine/"
+# ******************************************************************************
+# #### SETUP ####
+# ******************************************************************************
+## work directory path ##
+wine.path = "/Users/fernandoperes/dev/r/r-wine/" # to be reused as needed
 setwd(wine.path) 
-
-# use wines-util.r resources
+## Sources
 source(file =  paste(wine.path, "wines-utils.R", sep = ""))
+## Libraries
+library(dplyr)
+library(ggplot2)
 
-getwd()
-
-# Etapa 2: abrir os *data sets* originais e checar as colunas
-
+# ******************************************************************************
+# #### LOAD DATA ####
+# ******************************************************************************
 white.wine = read.csv("winequality-white.csv", sep = ";", header = TRUE)
 red.wine   = read.csv("winequality-red.csv", sep = ";", header = TRUE)
 
@@ -423,26 +427,6 @@ plot(x = bom$fixed.acidity, y = bom$pH,
      xlab = wine.fields.fixed.acidity, ylab = wine.fields.pH,
      main = "Gosto",
      pch = 20 , frame.plot = F)
-
-
-
-#resumo 2
-#all.wine[,c("fixed.acidity","pH", "taste", "taste.color", "color", "col.color")]
-#
-#par.customized <- par(mfrow=c(1,2))
-#
-#plot(x = all.wine$fixed.acidity, y = all.wine$pH, 
-#     col = all.wine$taste.color,  
-#     xlab = wine.fields.fixed.acidity, ylab = wine.fields.pH,
-#     main = "Gosto",
-#     pch = 20 , frame.plot = F)
-#
-#legend(x = "topright", 
-#       legend = unique(all.wine$taste), 
-#       col    = unique(all.wine$taste.color),
-#       pch = 16
-#       #  c(wine.good.color, wine.regular.color, wine.bad.color), pch = 1
-#)
 
 par.customized <- par(mfrow=c(1,1))
 plot(x = all.wine$fixed.acidity, y = all.wine$pH,

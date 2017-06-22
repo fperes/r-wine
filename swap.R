@@ -1,4 +1,122 @@
 
+# calc li and ls
+q1 <- quantile(x, probs=c(.25), na.rm = T)
+q3 <- quantile(x, probs=c(.75), na.rm = T)
+li <- q1 - 1.5 * IQR(x) # iqr = q3 - q1
+ls <- q3 + 1.5 * IQR(x) # iqr = q3 - q1
+
+lils <- c(li, ls)
+lils
+
+table(all.wine$outlier)
+
+# mark outliers
+start = TRUE
+df = all.wine
+field = field.name
+
+if (start) df$outlier = FALSE
+
+df$outlier[df[field] < lils[1]] <- TRUE
+df$outlier[df[field] > lils[2]] <- TRUE
+df$outlier <- as.factor(df$outlier)
+
+all.wine$outlier <- df$outlier
+
+#*******************************************************************************
+# #### wine outliers pie plot ####
+#*******************************************************************************
+
+wine.pie.outliers <- function(t, main){
+  
+  
+}
+
+wine.attr2.analysis <- function(x, xlab, y, ylab, y2, y2lab, color){
+  
+  par.customized <- par(mfrow=c(1,2)) 
+  
+  main0 = xlab
+  main1 = paste(ylab, "X", xlab)
+  main2 = paste(y2lab, "X", xlab)
+  
+  boxplot(x = x, xlab = xlab, 
+          col = color,
+          main = main0,
+          cex.axis = 0.75, cex.lab  = 0.75, cex.main = 0.85, 
+          horizontal = T, 
+          frame = F)
+  
+  abline(v = mean(x),
+         lwd = 2,
+         col = "red")
+  
+  abline(v = median(x),
+         lwd = 2,
+         col = "dark red")
+  
+  
+  h <- hist(x = x, xlab = xlab, 
+            main = main0, adj = 0,
+            ylab = "Frequencia",
+            col  = color,
+            include.lowest = TRUE,
+            cex.axis = 0.75, cex.lab  = 0.75, cex.main = 0.85,
+            labels = TRUE,
+            xlim = c(min(x),max(x) * 1.1))
+  
+  # curva normal
+  xfit <- seq(min(x), max(x), length = 40) 
+  yfit <- dnorm(xfit, mean = mean(x), sd = sd(x))
+  yfit <- yfit * diff(h$mids[1:2]) * length(x) 
+  lines(xfit, yfit, col = "blue", lwd = 2)
+  
+  abline(v = mean(x),
+         lwd = 2,
+         col = "red")
+  
+  abline(v = median(x),
+         lwd = 2,
+         col = "dark red")
+  
+  boxplot(x ~ y, 
+          xlab = ylab, 
+          ylab = xlab,
+          main = main1,
+          varwidth = TRUE,
+          staplewex = 2,
+          col = wine.color.all,
+          cex.axis = 0.75, cex.lab  = 0.75, cex.main = 0.85,
+          labels = TRUE, frame = FALSE,
+          ylim = c(min(x),max(x) * 1.1))
+  
+  text(y = boxplot.stats(x)$stats, 
+       labels = boxplot.stats(x)$stats, 
+       x = 8)
+  
+  boxplot(x ~ y2, 
+          xlab = y2lab, 
+          ylab = xlab,
+          main = main2,
+          varwidth = TRUE,
+          staplewex = 2,
+          col = wine.color.all,
+          cex.axis = 0.75, cex.lab  = 0.75, cex.main = 0.85,
+          levels(c("Ruim", "Regular", "Bom")),
+          labels = TRUE, frame = FALSE,
+          ylim = c(min(x),max(x) * 1.1))
+  
+  text(y = boxplot.stats(x)$stats, 
+       labels = boxplot.stats(x)$stats, 
+       x = 8)
+  
+}
+
+
+
+
+
+
 
 
 
@@ -338,3 +456,22 @@ wine.pie.outliers(table(all.wine$outlier), main = "")
 
 max(x)
 min(x)
+
+
+#resumo 2
+#all.wine[,c("fixed.acidity","pH", "taste", "taste.color", "color", "col.color")]
+#
+#par.customized <- par(mfrow=c(1,2))
+#
+#plot(x = all.wine$fixed.acidity, y = all.wine$pH, 
+#     col = all.wine$taste.color,  
+#     xlab = wine.fields.fixed.acidity, ylab = wine.fields.pH,
+#     main = "Gosto",
+#     pch = 20 , frame.plot = F)
+#
+#legend(x = "topright", 
+#       legend = unique(all.wine$taste), 
+#       col    = unique(all.wine$taste.color),
+#       pch = 16
+#       #  c(wine.good.color, wine.regular.color, wine.bad.color), pch = 1
+#)

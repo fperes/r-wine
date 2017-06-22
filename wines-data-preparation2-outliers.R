@@ -1,4 +1,3 @@
-#Top############################################################################
 #
 # INFNET MIT Big Data - Bloco A - Trabalho de R
 # 
@@ -6,9 +5,9 @@
 # Fonte de dados     : UCI - base wines
 # Autor              : Fernando A J Peres
 # Data               : 2017-06-09
-# Arquivo            : Análise descritiva 1
+# Arquivo            : Análise de outliers
 #
-#Top############################################################################
+#*******************************************************************************
 
 # Análise entre variável dependente e independentes
 # A T R I B U T O S:
@@ -30,177 +29,604 @@
 # 16. taste.color
 
 
-# wine.path       = "/Users/fernandoperes/Google Drive/r-dev/2017-06-Trabalho-R/" # mac original path
-wine.path = "C:/r-wine/" # windows original path
+# ******************************************************************************
+# #### SETUP ####
+# ******************************************************************************
+## work directory path ##
+wine.path = "/Users/fernandoperes/dev/r/r-wine/" # to be reused as needed
 setwd(wine.path) 
-
-# use wines-util.r resources
+## Sources
 source(file =  paste(wine.path, "wines-utils.R", sep = ""))
+## Libraries
+library(dplyr)
+library(ggplot2)
 
-getwd()
-
-# load prepared data files
+# ******************************************************************************
+# #### Load prepared data files ####
+# ******************************************************************************
 load(file="all-wine.Rda") # load(file="red-wine.Rda") # load(file="white-wine.Rda")
 
-# Acidez fixa
-# ******************************************************************************
-# 1. FIXED ACIDITY -------------------------------------------------------------
-# ******************************************************************************
-par.customized <- par(mfrow=c(3,1)) 
 
-# initialization (decrease rework)
+# ******************************************************************************
+# #### 1. FIXED ACIDITY ####
+# ******************************************************************************
+# <<< Acidez fixa >>>
+
+## initialization (decrease rework) 
 x = all.wine$fixed.acidity
 field.label = wine.fields.fixed.acidity
 field.name  = "fixed.acidity"
 
-# before outliers to be marked
-wine.boxplot(x, field.label, color =  wine.color.all, 
-             xlim = c(min(x), max(x)), li.ls = wine.lils(x))
+#calc limits
+sno.lno = wine.sno.lno(x)
 
-# to mark outliers
-table(all.wine$outlier)
-all.wine$outlier = wine.mark.outlier(start = TRUE, df = all.wine, field = field.name)
-table(all.wine$outlier)
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
 
-# after outliers have marked
-sub.x = subset(all.wine$fixed.acidity,  all.wine$outlier == FALSE)
-wine.boxplot(x = sub.x, field.label, color =  wine.color.all, xlim, 
-             li.ls = c(min(sub.x), max(sub.x)))
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$fixed.acidity
 
-# diference after marked outliers
-wine.pie.outliers(table(all.wine$outlier), main = "")
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
 
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
 
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
 
-# -------
-# -------
-n = ncol(all.wine) - 1
-par.customized <- par(mfrow=c(3,1))
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
 
-for(i in 1:n){
- 
-
-  i
-  n
-  # initialization (decrease rework)
-  field.label = wine.fields$label[i] #wine.fields.fixed.acidity
-  field.name  = wine.fields$name[i]
-  x = all.wine[field.name]
-  
-  # before outliers to be marked
-  wine.boxplot(x, field.label, color =  wine.color.all, 
-               xlim = c(min(x), max(x)), li.ls = wine.lils(x))
-  
-  # to mark outliers
-  table(all.wine$outlier)
-  all.wine$outlier = wine.mark.outlier(start = TRUE, df = all.wine, field = field.name)
-  table(all.wine$outlier)
-  
-  # after outliers have marked
-  sub.x = subset(all.wine$fixed.acidity,  all.wine$outlier == FALSE)
-  wine.boxplot(x = sub.x, field.label, color =  wine.color.all, xlim, 
-               li.ls = c(min(sub.x), max(sub.x)))
-  
-  # diference after marked outliers
-  wine.pie.outliers(table(all.wine$outlier), main = "")
-
-}
-n
-# -------
-# -------
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 
+# ******************************************************************************
 
-
-
-
-
-
-# Acidez volátil
-# 2. VOLATILE ACIDITY ----------------------------------------------------------
+# #### 2. VOLATILE ACIDITY ####
+# ******************************************************************************
 # The amount of acetic acid in wine, which at too high of levels can lead to an unpleasant, vinegar taste
-wine.attr2.analysis (x = all.wine$volatile.acidity, xlab = wine.fields.volatile.acidity,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
+# <<< Volatile acidity >>>
+
+## initialization (decrease rework) 
+x = all.wine$volatile.acidity
+field.label = wine.fields.volatile.acidity
+field.name  = "volatile.acidity"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$volatile.acidity
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 # Ácido cítrico
-# 3. CITRIC ACID ---------------------------------------------------------------
-# Found in small quantities, citric acid can add ‘freshness’ and flavor to wines
-wine.attr2.analysis (x = all.wine$citric.acid, xlab = wine.fields.citric.acid, 
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
 
-# Açucar residual
-# 4. RESIDUAL SUGAR ---------------------------------------------------------------
+
+# ******************************************************************************
+# #### 3. CITRIC ACID ####
+# ******************************************************************************
+# Found in small quantities, citric acid can add ‘freshness’ and flavor to wines
+# <<< Ácido cítrico >>>
+
+## initialization (decrease rework) 
+x = all.wine$citric.acid
+field.label = wine.fields.citric.acid
+field.name  = "citric.acid"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$citric.acid
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
+
+
+# ******************************************************************************
+# #### 4. RESIDUAL SUGAR ####
+# ******************************************************************************
 # The amount of sugar remaining after fermentation stops, it’s rare to find wines with less than 1 gram/liter and wines with greater than 45 grams/liter are considered sweet
-wine.attr2.analysis (x = all.wine$residual.sugar, xlab = wine.fields.residual.sugar,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
+# <<< Açucar residual >>>
+
+## initialization (decrease rework) 
+x = all.wine$residual.sugar
+field.label = wine.fields.residual.sugar
+field.name  = "residual.sugar"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$residual.sugar
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 # Cloretos
-# 5. CHLORIDES --------------------------------------------------------------------
+
+# ******************************************************************************
+# #### 5. CHLORIDES ####
+# ******************************************************************************
 # The amount of salt in the wine
-wine.attr2.analysis (x = all.wine$chlorides, xlab = wine.fields.chlorides,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
+# <<< Cloretos >>>
+
+## initialization (decrease rework) 
+x = all.wine$chlorides
+field.label = wine.fields.chlorides
+field.name  = "chlorides"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$chlorides
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 # Livre de dióxido de enxofre
-# 6. FREE SULFUR DIOXIDE ----------------------------------------------------------
+
+# ******************************************************************************
+# #### 6. FREE SULFUR DIOXIDE ####
+# ******************************************************************************
 # The free form of SO2 exists in equilibrium between molecular SO2 (as a dissolved gas) and bisulfite ion; it prevents microbial growth and the oxidation of wine
-wine.attr2.analysis (x = all.wine$free.sulfur.dioxide, xlab = wine.fields.free.sulfur.dioxide,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
+# <<< Livre de dioxido de enxofre >>>
+
+## initialization (decrease rework) 
+x = all.wine$free.sulfur.dioxide
+field.label = wine.fields.free.sulfur.dioxide
+field.name  = "free.sulfur.dioxide"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$free.sulfur.dioxide
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 # Total de dióxido de enxofre
-# 7. TOTAL SULFUR DIOXIDE ---------------------------------------------------------
+
+
+# ******************************************************************************
+# #### 7. TOTAL SULFUR DIOXIDE ####
+# ******************************************************************************
 # Amount of free and bound forms of S02; in low concentrations, SO2 is mostly undetectable in wine, but at free SO2 concentrations over 50 ppm, SO2 becomes evident in the nose and taste of wine
-wine.attr2.analysis (x = all.wine$total.sulfur.dioxide, 
-                     y = all.wine$quality,
-                     xlab = wine.fields.total.sulfur.dioxide,
-                     ylab = wine.fields.quality,
-                     y2 = all.wine$taste,
-                     y2lab = wine.fields.taste,
-                     color = wine.color.all)
+# <<< Total de dioxido de enxofre >>>
+
+## initialization (decrease rework) 
+x = all.wine$total.sulfur.dioxide
+field.label = wine.fields.total.sulfur.dioxide
+field.name  = "total.sulfur.dioxide"
+
+# calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$total.sulfur.dioxide
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 # Densidade
-# 8. DENSITY -----------------------------------------------------------------------
-# Density of water is close to that of water depending on the percent alcohol and sugar content
-wine.attr2.analysis (x = all.wine$density, xlab = wine.fields.density,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
 
+# ******************************************************************************
+# #### 8. DENSITY ####
+# ******************************************************************************
+# Density of water is close to that of water depending on the percent alcohol and sugar content
+# <<< Densidade >>>
+
+## initialization (decrease rework) 
+x = all.wine$density
+field.label = wine.fields.density
+field.name  = "density"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$density
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 # pH
-# 9. PH ---------------------------------------------------------------------------
+
+# ******************************************************************************
+# #### 9. pH ####
+# ******************************************************************************
 # Describes how acidic or basic a wine is on a scale from 0 (very acidic) to 14 (very basic); most wines are between 3-4 on the pH scale
-wine.attr2.analysis (x = all.wine$pH, xlab = wine.fields.pH,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
+# <<< pH >>>
+
+## initialization (decrease rework) 
+x = all.wine$fixed.pH
+field.label = wine.fields.pH
+field.name  = "pH"
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$pH
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 # Sulfato
-# 10. SULPHATES --------------------------------------------------------------------
+
+
+
+# ******************************************************************************
+# #### 10. SULPHATES ####
+# ******************************************************************************
 # A wine additive which can contribute to sulfur dioxide gas (S02) levels, wich acts as an antimicrobial and antioxidant
-wine.attr2.analysis (x = all.wine$sulphates, xlab = wine.fields.sulphates,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
+# <<< Sulfato >>>
+
+## initialization (decrease rework) 
+x = all.wine$sulphates
+field.label = wine.fields.sulphates
+field.name  = "sulphates"
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$sulphates
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 # Teor Álcólico
-# 11. ALCOHOL ----------------------------------------------------------------------
-# The percent of alcohol 
-wine.attr2.analysis (x = all.wine$alcohol, xlab = wine.fields.alcohol,
-                     y = all.wine$quality, ylab = wine.fields.quality,
-                     y2 = all.wine$taste, y2lab = wine.fields.taste,
-                     color = wine.color.all)
+
+# ******************************************************************************
+# #### 11. ALCOHOL ####
+# ******************************************************************************
+# The percent of alcohol
+# <<< Teor alcólico >>>
+
+## initialization (decrease rework) 
+x = all.wine$alcohol
+field.label = wine.fields.alcohol
+field.name  = "alcohol"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$alcohol
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 
+# #### 12. QUALITY ####
+# ******************************************************************************
+# The qualty of the wine based on perception (Rate 0..10)
+# <<< qualidade >>>
 
+## initialization (decrease rework) 
+x = all.wine$quality
+field.label = wine.fields.quality
+field.name  = "quality"
+
+#calc limits
+sno.lno = wine.sno.lno(x)
+
+# mark ouliers
+table(all.wine$outlier) # before mark outliers
+all.wine$outlier <- wine.mark.outlier(start = TRUE, df = all.wine, 
+                                      field = field.name, sno.lno = sno.lno)
+table(all.wine$outlier) # after marked outliers
+
+# Get the subset of ALL.WINE excluding marked outliers
+all.wine.non.outliers <- all.wine %>% filter(all.wine$outlier == FALSE)
+x2 <- all.wine.non.outliers$quality
+
+# Preparing to plot charts
+## distribution plot resuls
+par.customized <- par(mfrow = c(1, 2))
+
+# Plot field distribution with ALL (including outliers) 
+title = paste(field.label, " - com outliers presentes", sep = "")
+wine.distribution.plot(title = title, x = x, field.label = field.label,
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red")
+
+# Plot field distribution excluding outliers) 
+title = paste(field.label, " - com outliers removidos", sep = "")
+wine.distribution.plot(title = title, x = x2, field.label = field.label, 
+                       color =  wine.color.all, xlim = c(min(x), max(x)), 
+                       sno.lno = sno.lno, line.color = "red" )
+
+## plot the difference all X witout outliers
+par.customized <- par(mfrow = c(1, 2))
+
+title = paste(field.label, " - status de outliers", sep = "")
+wine.outliers.summary.plot(title = title, t = table(all.wine$outlier), 
+                           colors = c("green", "dark red"))
 
 
 
